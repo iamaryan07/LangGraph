@@ -12,12 +12,11 @@ router = APIRouter()
 @router.post('/chat')
 def chat(req: ChatRequest):
     config = {'configurable': {'thread_id': req.thread_id}}
-    full_response = ""
+    response = chatbot.invoke(
+        {'messages': [HumanMessage(content=req.message)]}, config= config) # type: ignore
 
-    for message_chunk, metadata in chatbot.stream({'messages': [HumanMessage(content=req.message)]}, config= config, stream_mode="messages"):
-        if message_chunk.content:
-            full_response += message_chunk.content
+    last_message = response["messages"][-1]
 
     return {
-        "response": full_response
+        "response": last_message.content
     }

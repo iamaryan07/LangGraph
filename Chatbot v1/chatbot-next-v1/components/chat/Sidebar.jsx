@@ -1,13 +1,15 @@
-import { MessageSquare, Sparkles } from "lucide-react";
+import {
+  MessageSquare,
+  Plus,
+  Sparkles,
+} from "lucide-react";
 
-const chats = [
-  "LangGraph Agent",
-  "FastAPI Integration",
-  "Groq Performance",
-  "Multi-Agent Systems",
-];
-
-export default function Sidebar() {
+export default function Sidebar({
+  chats,
+  currentChat,
+  setCurrentChat,
+  createNewChat,
+}) {
   return (
     <aside className="hidden md:flex w-72 flex-col border-r border-zinc-800 bg-zinc-950">
       
@@ -28,19 +30,36 @@ export default function Sidebar() {
             </p>
           </div>
         </div>
+
+        {/* New Chat Button */}
+        <button
+          onClick={createNewChat}
+          className="mt-5 w-full flex items-center justify-center gap-2 bg-white text-black hover:bg-zinc-200 transition p-3 rounded-2xl text-sm font-medium"
+        >
+          <Plus size={18} />
+          New Chat
+        </button>
       </div>
 
       {/* Chat List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {chats.map((chat, index) => (
+        {chats.map((chat) => (
           <button
-            key={index}
-            className="w-full flex items-center gap-3 bg-zinc-900 hover:bg-zinc-800 transition p-4 rounded-2xl text-left"
+            key={chat.id}
+            onClick={() => setCurrentChat(chat)}
+            className={`
+              w-full flex items-center gap-3 transition p-4 rounded-2xl text-left
+              ${
+                currentChat?.id === chat.id
+                  ? "bg-zinc-800"
+                  : "bg-zinc-900 hover:bg-zinc-800"
+              }
+            `}
           >
             <MessageSquare size={18} />
 
-            <span className="text-sm text-zinc-300">
-              {chat}
+            <span className="text-sm text-zinc-300 truncate">
+              {chat.title}
             </span>
           </button>
         ))}
