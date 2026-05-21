@@ -24,7 +24,16 @@ router = APIRouter()
 
 @router.post('/chat')
 def chat(req: ChatRequest):
-    config = {'configurable': {'thread_id': req.thread_id}}
+    config = {
+        'configurable': {
+            'thread_id': req.thread_id
+        },
+        "metadata": {
+            "thread_id": req.thread_id
+        },
+        "run_name": "chat-turn"
+    }
+    
     response = chatbot.invoke(
         {'messages': [HumanMessage(content=req.message)]}, config= config) # type: ignore
 
@@ -67,7 +76,11 @@ def get_chat(thread_id: str):
     config = {
         "configurable": {
             "thread_id": thread_id
-        }
+        },
+        "metadata": {
+            "thread_id": thread_id
+        },
+        "run_name": "chat-turn"
     }
 
     state = chatbot.get_state(config= config)
