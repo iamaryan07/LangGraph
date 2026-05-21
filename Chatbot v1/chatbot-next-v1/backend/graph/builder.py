@@ -12,7 +12,11 @@ load_dotenv()
 
 DB_URI = os.getenv("DATABASE_URL")
 
-conn = Connection.connect(DB_URI, autocommit= True)
+conn = Connection.connect(
+    DB_URI,
+    autocommit=True,
+    prepare_threshold=0
+)
 
 checkpointer = PostgresSaver(conn)
 checkpointer.setup()
