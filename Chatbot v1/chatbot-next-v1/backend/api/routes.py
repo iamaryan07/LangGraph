@@ -77,10 +77,15 @@ def get_chat(thread_id: str):
     if state.values:
         messages = state.values.get("messages", [])
 
+    role_map = {
+        "human": "user",
+        "ai": "assistant"
+    }
+
     return {
         "messages": [
             {
-                "role": message.type,
+                "role": role_map.get(message.type, message.type),
                 "content": message.content
             }
             for message in messages

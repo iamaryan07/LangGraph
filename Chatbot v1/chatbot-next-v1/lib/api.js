@@ -54,7 +54,7 @@ export async function getChatMessages(
   threadId
 ) {
   const res = await fetch(
-    `${API_BASE}/chat/${threadId}`
+    `${API_BASE}/chats/${threadId}`
   );
 
   return res.json();
