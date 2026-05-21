@@ -11,13 +11,16 @@ export default function ChatLayout() {
   const {
     input,
     setInput,
+
     loading,
+
     messages,
     sendMessage,
 
     chats,
     currentChat,
-    setCurrentChat,
+
+    loadChat,
 
     createNewChat,
   } = useChat();
@@ -27,17 +30,14 @@ export default function ChatLayout() {
       <Sidebar
         chats={chats}
         currentChat={currentChat}
-        setCurrentChat={setCurrentChat}
+        loadChat={loadChat}
         createNewChat={createNewChat}
       />
 
       <section className="flex-1 flex flex-col">
         <ChatHeader currentChat={currentChat} />
 
-        <ChatMessages
-          messages={messages}
-          loading={loading}
-        />
+        <ChatMessages messages={messages} loading={loading} />
 
         <ChatInput
           input={input}

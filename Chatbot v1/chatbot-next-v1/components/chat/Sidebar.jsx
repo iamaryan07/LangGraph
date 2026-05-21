@@ -7,15 +7,16 @@ import {
 export default function Sidebar({
   chats,
   currentChat,
-  setCurrentChat,
+  loadChat,
   createNewChat,
 }) {
   return (
     <aside className="hidden md:flex w-72 flex-col border-r border-zinc-800 bg-zinc-950">
-      
+
       {/* Logo */}
       <div className="p-6 border-b border-zinc-800">
         <div className="flex items-center gap-3">
+          
           <div className="bg-white text-black p-2 rounded-xl">
             <Sparkles size={20} />
           </div>
@@ -37,6 +38,7 @@ export default function Sidebar({
           className="mt-5 w-full flex items-center justify-center gap-2 bg-white text-black hover:bg-zinc-200 transition p-3 rounded-2xl text-sm font-medium"
         >
           <Plus size={18} />
+
           New Chat
         </button>
       </div>
@@ -46,7 +48,7 @@ export default function Sidebar({
         {chats.map((chat) => (
           <button
             key={chat.id}
-            onClick={() => setCurrentChat(chat)}
+            onClick={() => loadChat(chat)}
             className={`
               w-full flex items-center gap-3 transition p-4 rounded-2xl text-left
               ${
@@ -73,6 +75,7 @@ export default function Sidebar({
           </p>
         </div>
       </div>
+
     </aside>
   );
 }

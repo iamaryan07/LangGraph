@@ -1,126 +1,126 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { sendMessageToBackend } from "@/lib/api";
-import { createChat, getChats, updateChat } from "@/utils/storage";
+
+import {
+  sendMessageToBackend,
+  createChat,
+  getChats,
+  getChatMessages,
+} from "@/lib/api";
 
 export function useChat() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const [messages, setMessages] = useState([]);
+
   const [chats, setChats] = useState([]);
   const [currentChat, setCurrentChat] = useState(null);
 
+  // LOAD ALL CHATS
   useEffect(() => {
-    const storedChats = getChats();
-    if (storedChats.length > 0) {
-      setChats(storedChats);
-      setCurrentChat(storedChats[0]);
-    } else {
-      const newChat = createChat();
+    const loadChats = async () => {
+      try {
+        const storedChats = await getChats();
 
-      setChats([newChat]);
-      setCurrentChat(newChat);
-    }
+        setChats(storedChats);
+
+        if (storedChats.length > 0) {
+          await loadChat(storedChats[0]);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    loadChats();
   }, []);
 
-  const createNewChat = () => {
-    const newChat = createChat();
+  // LOAD SINGLE CHAT
+  const loadChat = async (chat) => {
+    try {
+      setCurrentChat(chat);
 
-    setChats((prev) => [newChat, ...prev]);
+      const data = await getChatMessages(chat.id);
 
-    setCurrentChat(newChat);
+      setMessages(data.messages || []);
+    } catch (error) {
+      console.error(error);
+
+      setMessages([]);
+    }
   };
 
-  const messages = currentChat?.messages || [];
+  // CREATE NEW CHAT
+  const createNewChat = async () => {
+    try {
+      const newChat = await createChat();
 
+      setChats((prev) => [newChat, ...prev]);
+
+      setCurrentChat(newChat);
+
+      setMessages([]);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  // SEND MESSAGE
   const sendMessage = async () => {
     if (!input.trim() || loading || !currentChat) return;
 
     const userInput = input;
 
     setInput("");
+
     setLoading(true);
 
-    // USER MESSAGE
-    const updatedUserMessages = [
-      ...currentChat.messages,
+    // OPTIMISTIC USER MESSAGE
+    setMessages((prev) => [
+      ...prev,
       {
         role: "user",
         content: userInput,
       },
-    ];
-
-    const updatedUserChat = {
-      ...currentChat,
-      messages: updatedUserMessages,
-      title:
-        currentChat.title === "New Chat"
-          ? userInput.slice(0, 30)
-          : currentChat.title,
-    };
-
-    updateChat(updatedUserChat);
-
-    setCurrentChat(updatedUserChat);
-
-    setChats((prev) =>
-      prev.map((chat) =>
-        chat.id === updatedUserChat.id ? updatedUserChat : chat,
-      ),
-    );
+    ]);
 
     try {
-      const threadId = updatedUserChat.id;
-
-      const response = await sendMessageToBackend(userInput, threadId);
+      const response = await sendMessageToBackend(userInput, currentChat.id);
 
       // ASSISTANT MESSAGE
-      const updatedAssistantMessages = [
-        ...updatedUserChat.messages,
+      setMessages((prev) => [
+        ...prev,
         {
           role: "assistant",
           content: response,
         },
-      ];
+      ]);
 
-      const updatedAssistantChat = {
-        ...updatedUserChat,
-        messages: updatedAssistantMessages,
-      };
+      // UPDATE TITLE LOCALLY
+      if (currentChat.title === "New Chat") {
+        const updatedChat = {
+          ...currentChat,
+          title: userInput.slice(0, 30),
+        };
 
-      updateChat(updatedAssistantChat);
+        setCurrentChat(updatedChat);
 
-      setCurrentChat(updatedAssistantChat);
-
-      setChats((prev) =>
-        prev.map((chat) =>
-          chat.id === updatedAssistantChat.id ? updatedAssistantChat : chat,
-        ),
-      );
+        setChats((prev) =>
+          prev.map((chat) => (chat.id === updatedChat.id ? updatedChat : chat)),
+        );
+      }
     } catch (error) {
       console.error(error);
 
-      const failedMessages = [
-        ...updatedUserChat.messages,
+      setMessages((prev) => [
+        ...prev,
         {
           role: "assistant",
           content: "Backend connection failed.",
         },
-      ];
-
-      const failedChat = {
-        ...updatedUserChat,
-        messages: failedMessages,
-      };
-
-      updateChat(failedChat);
-
-      setCurrentChat(failedChat);
-
-      setChats((prev) =>
-        prev.map((chat) => (chat.id === failedChat.id ? failedChat : chat)),
-      );
+      ]);
     } finally {
       setLoading(false);
     }
@@ -129,13 +129,16 @@ export function useChat() {
   return {
     input,
     setInput,
+
     loading,
+
     messages,
     sendMessage,
 
     chats,
     currentChat,
-    setCurrentChat,
+
+    loadChat,
 
     createNewChat,
   };
