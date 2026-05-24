@@ -1,15 +1,17 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from langchain_core.messages import HumanMessage
 
 from models.schemas import ChatRequest
-
-from graph.builder import chatbot
 
 from supabase import create_client
 
 import os
 
 import uuid
+
+from dotenv import load_dotenv
+
+load_dotenv()
 
 SUPABASE_URL = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
 SUPABASE_KEY = os.getenv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY")
@@ -22,8 +24,11 @@ supabase = create_client(
 router = APIRouter()
 
 
+
 @router.post('/chat')
-def chat(req: ChatRequest):
+async def chat(req: ChatRequest, request: Request):
+    chatbot = request.app.state.chatbot
+
     config = {
         'configurable': {
             'thread_id': req.thread_id
@@ -34,18 +39,28 @@ def chat(req: ChatRequest):
         "run_name": "chat-turn"
     }
     
-    response = chatbot.invoke(
+    response = await chatbot.ainvoke(
         {'messages': [HumanMessage(content=req.message)]}, config= config) # type: ignore
 
     last_message = response["messages"][-1]
 
+    content = (
+        last_message.content
+        if isinstance(last_message.content, str)
+        else "".join(
+            item.get("text", "")
+            for item in last_message.content
+            if isinstance(item, dict)
+        )
+    )
+
     return {
-        "response": last_message.content
+        "response": content
     }
 
 
 @router.post('/chat/new')
-def create_chat():
+async def create_chat():
     thread_id = str(uuid.uuid4())
 
     chat = {
@@ -59,7 +74,7 @@ def create_chat():
 
 
 @router.get("/chats")
-def get_chats():
+async def get_chats():
     response = (
         supabase
           .table("chats")
@@ -72,7 +87,9 @@ def get_chats():
 
 
 @router.get("/chats/{thread_id}")
-def get_chat(thread_id: str):
+async def get_chat(thread_id: str, request: Request):
+    chatbot = request.app.state.chatbot
+
     config = {
         "configurable": {
             "thread_id": thread_id
@@ -83,7 +100,7 @@ def get_chat(thread_id: str):
         "run_name": "chat-turn"
     }
 
-    state = chatbot.get_state(config= config)
+    state = await chatbot.aget_state(config= config)
 
     messages = []
 
@@ -99,7 +116,15 @@ def get_chat(thread_id: str):
         "messages": [
             {
                 "role": role_map.get(message.type, message.type),
-                "content": message.content
+                "content": (
+                    message.content
+                    if isinstance(message.content, str)
+                    else "".join(
+                        item.get("text", "")
+                        for item in message.content
+                        if isinstance(item, dict)
+                    )
+                )
             }
             for message in messages
         ]

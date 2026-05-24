@@ -1,31 +1,51 @@
-from langgraph.graph import StateGraph, START, END
+from langgraph.graph import StateGraph, START
+from langgraph.prebuilt import ToolNode, tools_condition
 
 from graph.state import ChatState
-from graph.nodes import chatbot_node
-from langgraph.checkpoint.postgres import PostgresSaver
+from graph.nodes import create_chat_node
+from graph.tools import load_all_tools
 
-from psycopg import Connection
+from services.llm import get_llm
+
+from psycopg import AsyncConnection
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+
 from dotenv import load_dotenv
+
 import os
 
 load_dotenv()
 
 DB_URI = os.getenv("DATABASE_URL")
 
-conn = Connection.connect(
-    DB_URI,
-    autocommit=True,
-    prepare_threshold=0
-)
+async def build_graph():
 
-checkpointer = PostgresSaver(conn)
-checkpointer.setup()
+    tools = await load_all_tools()
 
-graph = StateGraph(ChatState)
+    llm = get_llm()
 
-graph.add_node("chatbot_node", chatbot_node)
+    llm_with_tools = llm.bind_tools(tools)
 
-graph.add_edge(START, "chatbot_node")
-graph.add_edge("chatbot_node", END)
+    conn = await AsyncConnection.connect(
+        DB_URI,
+        autocommit=True,
+        prepare_threshold=0
+    )
 
-chatbot = graph.compile(checkpointer= checkpointer)
+    checkpointer = AsyncPostgresSaver(conn)
+    await checkpointer.setup()
+
+    graph = StateGraph(ChatState)
+
+    tool_node = ToolNode(tools)
+
+    graph.add_node("chat_node", create_chat_node(llm_with_tools))
+    graph.add_node("tools", tool_node)
+
+    graph.add_edge(START, "chat_node")
+    graph.add_conditional_edges("chat_node", tools_condition)
+    graph.add_edge("tools", "chat_node")
+
+    chatbot = graph.compile(checkpointer= checkpointer)
+
+    return chatbot
