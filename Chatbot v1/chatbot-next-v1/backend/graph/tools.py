@@ -15,12 +15,12 @@ async def load_all_tools():
     client = MultiServerMCPClient(
     {
         "expenses": {
-            "url": "https://expense-tracker-mcp.up.railway.app",
-                #   "https://money-track-mcp.fastmcp.app/mcp"
+            "url": "https://expense-tracker-mcp.up.railway.app/mcp",
+                #   "https://money-track-mcp.fastmcp.app/mcp" -> FastMCP
             "transport": "streamable_http",
-            "headers": {
-                "Authorization": f"Bearer {os.getenv('FASTMCP_TOKEN')}"
-            }
+            # "headers": {
+            #     "Authorization": f"Bearer {os.getenv('FASTMCP_TOKEN')}" -> FastMCP
+            # }
         }
     }
     )
