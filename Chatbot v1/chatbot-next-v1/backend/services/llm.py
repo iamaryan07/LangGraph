@@ -6,5 +6,5 @@ load_dotenv()
 def get_llm():
 
     return ChatGroq(
-        model="qwen/qwen3-32b"
+        model="llama-3.3-70b-versatile"
     )
