@@ -2,8 +2,9 @@ from pydantic import BaseModel
 
 
 class ChatRequest(BaseModel):
-    message: str
     thread_id: str
+    message: str | None = None
+    resume: dict | None = None
 
 class ChatResponse(BaseModel):
     response: str

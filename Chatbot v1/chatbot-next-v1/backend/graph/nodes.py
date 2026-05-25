@@ -1,4 +1,5 @@
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import SystemMessage, AIMessage
+from langgraph.types import interrupt
 
 
 SYSTEM_PROMPT = """
@@ -23,12 +24,56 @@ def create_chat_node(llm_with_tools):
 
     async def chat_node(state):
         """LLM node may answer or request a tool call."""
+
+        recent_messages = state["messages"][-6:]
+
         messages = [
             SystemMessage(content=SYSTEM_PROMPT)
-        ] + state["messages"]
+        ] + recent_messages
 
         response = await llm_with_tools.ainvoke(messages)
 
         return {"messages": [response]}
-    
+
     return chat_node
+
+async def approval_node(state):
+
+    last_message = state["messages"][-1]
+
+    tool_calls = last_message.tool_calls
+
+    SAFE_TOOLS = {
+        "duckduckgo_search"
+    }
+
+    dangerous_tools = [
+        tool for tool in tool_calls
+        if tool["name"] not in SAFE_TOOLS
+    ]
+
+    # SAFE TOOLS AUTO-APPROVED
+    if not dangerous_tools:
+        return {"approved": True}
+
+    decision = interrupt({
+        "type": "tool_approval",
+        "tools": dangerous_tools,
+        "question": "Allow tool execution?"
+    })
+
+    return {
+        "approved": decision["approved"]
+    }
+
+
+def denial_node(state):
+    '''Tool usage denied'''
+
+    return {
+    "messages": [
+        AIMessage(
+            content="Tool usage denied!"
+        )
+    ]
+    }

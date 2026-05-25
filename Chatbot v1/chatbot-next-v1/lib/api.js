@@ -2,8 +2,17 @@ const API_BASE = "http://localhost:8000";
 
 export async function sendMessageToBackend(
   message,
-  threadId
+  threadId,
+  resume = null
 ) {
+  const body = resume ? {
+        thread_id: threadId,
+        resume
+  } : {
+        message,
+        thread_id: threadId,
+  };
+
   const res = await fetch(
     `${API_BASE}/chat`,
     {
@@ -13,10 +22,7 @@ export async function sendMessageToBackend(
         "Content-Type": "application/json",
       },
 
-      body: JSON.stringify({
-        message,
-        thread_id: threadId,
-      }),
+      body: JSON.stringify(body),
     }
   );
 
@@ -28,7 +34,7 @@ export async function sendMessageToBackend(
 
   const data = await res.json();
 
-  return data.response;
+  return data;
 }
 
 export async function createChat() {

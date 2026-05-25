@@ -1,11 +1,11 @@
-from langchain_community.tools import DuckDuckGoSearchRun
+from langchain_community.tools import DuckDuckGoSearchResults
 from langchain_core.tools import tool
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from rag.retriever import retriever
 import os
 
 
-search = DuckDuckGoSearchRun(region= "us-en")
+search = DuckDuckGoSearchResults(region= "us-en")
 
 @tool
 def duckduckgo_search(query: str) -> str:
@@ -37,24 +37,8 @@ def retrieve_context(query: str) -> str:
         doc.page_content for doc in docs
     )
 
-    context = context[:3000]
-
-    return f"""
-        You are given retrieved textbook context below.
-
-        Use it to answer the user's question clearly and concisely.
-
-        Rules:
-        - Summarize instead of copying verbatim
-        - Use markdown formatting
-        - Use headings and bullet points
-        - Keep explanations concise
-        - Avoid giant paragraphs
-        - If equations exist, format them properly
-
-        Retrieved Context:
-        {context}
-        """
+    context = context[:800]
+    return context
 
 
 async def load_all_tools():

@@ -23,6 +23,9 @@ export default function ChatLayout() {
     loadChat,
 
     createNewChat,
+
+    handleApproval,
+    pendingInterrupt
   } = useChat();
 
   return (
@@ -44,6 +47,8 @@ export default function ChatLayout() {
           setInput={setInput}
           sendMessage={sendMessage}
           loading={loading}
+          interrupt={pendingInterrupt}
+          approval={handleApproval}
         />
       </section>
     </main>

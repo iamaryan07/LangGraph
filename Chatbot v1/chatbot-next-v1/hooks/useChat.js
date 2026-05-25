@@ -18,6 +18,8 @@ export function useChat() {
   const [chats, setChats] = useState([]);
   const [currentChat, setCurrentChat] = useState(null);
 
+  const [pendingInterrupt, setPendingInterrupt] = useState(null);
+
   // LOAD ALL CHATS
   useEffect(() => {
     const loadChats = async () => {
@@ -67,6 +69,32 @@ export function useChat() {
     }
   };
 
+  const handleApproval = async (approved) => {
+    if (!pendingInterrupt) return;
+
+    setLoading(true);
+
+    try {
+      const data = await sendMessageToBackend(null, currentChat.id, { approved });
+
+      setPendingInterrupt(null);
+
+      if (data.response) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: data.response,
+          },
+        ]);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // SEND MESSAGE
   const sendMessage = async () => {
     if (!input.trim() || loading || !currentChat) return;
@@ -87,16 +115,20 @@ export function useChat() {
     ]);
 
     try {
-      const response = await sendMessageToBackend(userInput, currentChat.id);
+      const data = await sendMessageToBackend(userInput, currentChat.id);
 
       // ASSISTANT MESSAGE
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: response,
-        },
-      ]);
+      if (data.type == "interrupt") {
+        setPendingInterrupt(data.interrupt);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: data.response,
+          },
+        ]);
+      }
 
       // UPDATE TITLE LOCALLY
       if (currentChat.title === "New Chat") {
@@ -141,5 +173,8 @@ export function useChat() {
     loadChat,
 
     createNewChat,
+
+    handleApproval,
+    pendingInterrupt
   };
 }

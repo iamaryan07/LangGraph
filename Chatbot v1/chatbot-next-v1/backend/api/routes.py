@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request
 from langchain_core.messages import HumanMessage
+from langgraph.types import Command
 
 from models.schemas import ChatRequest
 
@@ -24,7 +25,6 @@ supabase = create_client(
 router = APIRouter()
 
 
-
 @router.post('/chat')
 async def chat(req: ChatRequest, request: Request):
     chatbot = request.app.state.chatbot
@@ -38,9 +38,27 @@ async def chat(req: ChatRequest, request: Request):
         },
         "run_name": "chat-turn"
     }
-    
-    response = await chatbot.ainvoke(
-        {'messages': [HumanMessage(content=req.message)]}, config= config) # type: ignore
+
+    if req.resume:
+        response = await chatbot.ainvoke(
+            Command(
+                resume=req.resume
+            ),
+            config=config
+        )
+
+    else:
+        response = await chatbot.ainvoke(
+            {'messages': [HumanMessage(content=req.message)]}, config= config) # type: ignore
+
+    if "__interrupt__" in response:
+
+        interrupt_data = response["__interrupt__"][0].value
+
+        return {
+            "type": "interrupt",
+            "interrupt": interrupt_data
+        }
 
     last_message = response["messages"][-1]
 
@@ -55,6 +73,7 @@ async def chat(req: ChatRequest, request: Request):
     )
 
     return {
+        "type": "message",
         "response": content
     }
 
@@ -112,10 +131,28 @@ async def get_chat(thread_id: str, request: Request):
         "ai": "assistant"
     }
 
+    filtered_messages = []
+
+    for message in messages:
+
+        # SKIP TOOL OUTPUTS
+        if message.type == "tool":
+            continue
+
+        # SKIP AI TOOL CALL MESSAGES
+        if (
+            message.type == "ai"
+            and getattr(message, "tool_calls", None)
+        ):
+            continue
+
+        filtered_messages.append(message)
+
     return {
         "messages": [
             {
                 "role": role_map.get(message.type, message.type),
+
                 "content": (
                     message.content
                     if isinstance(message.content, str)
@@ -126,6 +163,6 @@ async def get_chat(thread_id: str, request: Request):
                     )
                 )
             }
-            for message in messages
+            for message in filtered_messages
         ]
     }
