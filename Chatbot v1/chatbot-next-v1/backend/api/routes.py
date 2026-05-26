@@ -59,6 +59,10 @@ async def chat(req: ChatRequest, request: Request):
             "type": "interrupt",
             "interrupt": interrupt_data
         }
+    
+    state = await chatbot.aget_state(config)
+
+    print(state.values)
 
     last_message = response["messages"][-1]
 

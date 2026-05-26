@@ -1,4 +1,4 @@
-from langchain_core.messages import SystemMessage, AIMessage
+from langchain_core.messages import SystemMessage, AIMessage, HumanMessage, RemoveMessage
 from langgraph.types import interrupt
 
 
@@ -20,16 +20,61 @@ Tool Usage:
   ALWAYS use retrieve_context first.
 """
 
+def create_summarize_node(llm):
+
+    async def summarize_node(state):
+
+        summary = state.get("summary", "")
+
+        if summary:
+            prompt = (
+                f"Existing summary:\n{summary}\n\n"
+                "Extend the summary using the new conversation above."
+            )
+        else:
+            prompt = "Summarize the conversation above."
+
+        messages = state["messages"] + [
+            HumanMessage(content=prompt)
+        ]
+
+        response = await llm.ainvoke(messages)
+
+        # Keep latest 4 messages
+        messages_to_delete = state["messages"][:-4]
+
+        return {
+            "summary": response.content,
+            "messages": [
+                RemoveMessage(id=m.id)
+                for m in messages_to_delete
+            ]
+        }
+
+    return summarize_node
+
+def should_summarize(state):
+    return len(state["messages"]) > 4
+
+
 def create_chat_node(llm_with_tools):
 
     async def chat_node(state):
         """LLM node may answer or request a tool call."""
 
-        recent_messages = state["messages"][-6:]
+        messages = []
+
+        if state.get('summary'):
+            messages.append({
+                'role': 'system',
+                "content": f"Conversation summary:\n{state['summary']}"
+            })
+
+        messages.extend(state['messages'])
 
         messages = [
             SystemMessage(content=SYSTEM_PROMPT)
-        ] + recent_messages
+        ] + messages
 
         response = await llm_with_tools.ainvoke(messages)
 
