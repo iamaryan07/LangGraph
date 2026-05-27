@@ -50,6 +50,7 @@ export default function ChatLayout() {
           interrupt={pendingInterrupt}
           approval={handleApproval}
         />
+
       </section>
     </main>
   );

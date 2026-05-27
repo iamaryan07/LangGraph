@@ -97,7 +97,18 @@ export function useChat() {
 
   // SEND MESSAGE
   const sendMessage = async () => {
-    if (!input.trim() || loading || !currentChat) return;
+    if (!input.trim() || loading) return;
+
+    let activeChat = currentChat;
+
+    if (!activeChat) {
+
+      activeChat = await createChat();
+
+      setChats((prev) => [activeChat, ...prev]);
+
+      setCurrentChat(activeChat);
+    }
 
     const userInput = input;
 
@@ -115,7 +126,7 @@ export function useChat() {
     ]);
 
     try {
-      const data = await sendMessageToBackend(userInput, currentChat.id);
+      const data = await sendMessageToBackend(userInput, activeChat.id);
 
       // ASSISTANT MESSAGE
       if (data.type == "interrupt") {
@@ -131,9 +142,9 @@ export function useChat() {
       }
 
       // UPDATE TITLE LOCALLY
-      if (currentChat.title === "New Chat") {
+      if (activeChat.title === "New Chat") {
         const updatedChat = {
-          ...currentChat,
+          ...activeChat,
           title: userInput.slice(0, 30),
         };
 

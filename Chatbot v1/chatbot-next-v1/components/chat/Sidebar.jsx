@@ -4,6 +4,9 @@ import {
   Sparkles,
 } from "lucide-react";
 
+import LogoutButton from "@/components/auth/LogoutButton";
+
+
 export default function Sidebar({
   chats,
   currentChat,
@@ -11,7 +14,7 @@ export default function Sidebar({
   createNewChat,
 }) {
   return (
-    <aside className="hidden md:flex w-72 flex-col border-r border-zinc-800 bg-zinc-950">
+    <aside className="hidden md:flex w-60 flex-col border-r border-zinc-800 bg-zinc-950">
 
       {/* Logo */}
       <div className="p-6 border-b border-zinc-800">
@@ -69,10 +72,24 @@ export default function Sidebar({
 
       {/* Footer */}
       <div className="border-t border-zinc-800 p-4">
-        <div className="bg-zinc-900 rounded-2xl p-4">
-          <p className="text-sm text-zinc-400">
-            Powered by LangGraph + FastAPI
-          </p>
+        <div className="rounded-2xl bg-zinc-900 p-4">
+          
+          <div className="flex items-center justify-between">
+            
+            <div className="flex-1 pr-4">
+              {/* <p className="text-sm font-medium text-zinc-200">
+                AI Workspace
+              </p> */}
+
+              <p className="text-xs text-zinc-500">
+                Powered by LangGraph + FastAPI
+              </p>
+            </div>
+
+            <LogoutButton />
+
+          </div>
+
         </div>
       </div>
 

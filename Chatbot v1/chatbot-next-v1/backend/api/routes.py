@@ -4,7 +4,11 @@ from langgraph.types import Command
 
 from models.schemas import ChatRequest
 
+from services.auth import verify_token
+
 from supabase import create_client
+
+from fastapi import Depends, Header, HTTPException
 
 import os
 
@@ -15,7 +19,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 SUPABASE_URL = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
-SUPABASE_KEY = os.getenv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY")
+# SUPABASE_KEY = os.getenv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY")
+SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
 supabase = create_client(
     SUPABASE_URL,
@@ -26,7 +31,26 @@ router = APIRouter()
 
 
 @router.post('/chat')
-async def chat(req: ChatRequest, request: Request):
+async def chat(req: ChatRequest, request: Request, user = Depends(verify_token)):
+
+    user_id = user["sub"]
+
+    chat = (
+        supabase
+        .table("chats")
+        .select("*")
+        .eq("id", req.thread_id)
+        .eq("user_id", user_id)
+        .single()
+        .execute()
+    )
+
+    if not chat.data:
+        raise HTTPException(
+            status_code=404,
+            detail="Chat not found"
+        )
+
     chatbot = request.app.state.chatbot
 
     config = {
@@ -79,12 +103,13 @@ async def chat(req: ChatRequest, request: Request):
 
 
 @router.post('/chat/new')
-async def create_chat():
+async def create_chat(user = Depends(verify_token)):
     thread_id = str(uuid.uuid4())
 
     chat = {
         "id": thread_id,
-        "title": "New Chat"
+        "title": "New Chat",
+        "user_id": user["sub"]
         }
     
     supabase.table('chats').insert(chat).execute()
@@ -93,11 +118,15 @@ async def create_chat():
 
 
 @router.get("/chats")
-async def get_chats():
+async def get_chats(user = Depends(verify_token)):
+
+    user_id = user["sub"]
+
     response = (
         supabase
           .table("chats")
           .select("*")
+          .eq("user_id", user_id)
           .order("created_at", desc= True)
           .execute()
     )
@@ -106,7 +135,10 @@ async def get_chats():
 
 
 @router.get("/chats/{thread_id}")
-async def get_chat(thread_id: str, request: Request):
+async def get_chat(thread_id: str, request: Request, user = Depends(verify_token)):
+
+    user_id = user["sub"]
+
     chatbot = request.app.state.chatbot
 
     config = {
@@ -118,6 +150,22 @@ async def get_chat(thread_id: str, request: Request):
         },
         "run_name": "chat-turn"
     }
+
+    chat = (
+        supabase
+          .table('chats')
+          .select('*')
+          .eq('id', thread_id)
+          .eq('user_id', user_id)
+          .single()
+          .execute()
+    )
+
+    if not chat.data:
+        raise HTTPException(
+            status_code=404,
+            detail="Chat not found"
+        )
 
     state = await chatbot.aget_state(config= config)
 
