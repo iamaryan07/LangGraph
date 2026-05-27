@@ -1,18 +1,18 @@
-import {
-  MessageSquare,
-  Plus,
-  Sparkles,
-} from "lucide-react";
+import { MessageSquare, Plus, Sparkles, Trash2 } from "lucide-react";
 
 import LogoutButton from "@/components/auth/LogoutButton";
+import { useRouter } from "next/navigation";
 
 
 export default function Sidebar({
   chats,
   currentChat,
-  loadChat,
   createNewChat,
+  handleDeleteChat
 }) {
+
+  const router = useRouter()
+
   return (
     <aside className="hidden md:flex w-60 flex-col border-r border-zinc-800 bg-zinc-950">
 
@@ -49,11 +49,12 @@ export default function Sidebar({
       {/* Chat List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {chats.map((chat) => (
-          <button
+          <div
             key={chat.id}
-            onClick={() => loadChat(chat)}
+            onClick={() => router.push(`/chat/${chat.id}`)}
             className={`
-              w-full flex items-center gap-3 transition p-4 rounded-2xl text-left
+              w-full flex items-center justify-between
+              gap-3 transition p-4 rounded-2xl cursor-pointer
               ${
                 currentChat?.id === chat.id
                   ? "bg-zinc-800"
@@ -61,12 +62,30 @@ export default function Sidebar({
               }
             `}
           >
-            <MessageSquare size={18} />
+            <div className="flex items-center gap-3 overflow-hidden">
+              <MessageSquare size={18} />
 
-            <span className="text-sm text-zinc-300 truncate">
-              {chat.title}
-            </span>
-          </button>
+              <span className="text-sm text-zinc-300 truncate">
+                {chat.title}
+              </span>
+            </div>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+
+                handleDeleteChat(chat.id);
+              }}
+              className="
+                rounded-md p-1
+                text-zinc-500 transition
+                hover:bg-zinc-700
+                hover:text-red-400
+              "
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
         ))}
       </div>
 

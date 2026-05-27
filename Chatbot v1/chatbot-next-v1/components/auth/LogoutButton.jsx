@@ -6,8 +6,10 @@ import { supabase } from "@/lib/supabase";
 export default function LogoutButton() {
 
   async function handleLogout() {
+
     await supabase.auth.signOut();
-    window.location.reload();
+
+    window.location.href = "/";
   }
 
   return (

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-import ChatLayout from "@/components/chat/ChatLayout";
 import LoginButton from "@/components/auth/LoginButton";
 import AuthLoading from "@/components/auth/AuthLoading";
 
@@ -11,21 +10,25 @@ import { supabase } from "@/lib/supabase";
 export default function Home() {
 
   const [user, setUser] = useState(null);
+
   const [loading, setLoading] = useState(true);
 
+  
+  async function getUser() {
+
+    const { data } = await supabase.auth.getUser();
+
+    setUser(data.user);
+
+    setLoading(false);
+  }
+
   useEffect(() => {
-
-    async function getUser() {
-
-      const { data } = await supabase.auth.getUser();
-
-      setUser(data.user);
-      setLoading(false);
-    }
 
     getUser();
 
     if (window.location.hash) {
+
       window.history.replaceState(
         {},
         document.title,
@@ -33,30 +36,40 @@ export default function Home() {
       );
     }
 
-    
-    const authListener = supabase.auth.onAuthStateChange((event, session) => {
-      const user = session?.user || null
+    const authListener =
+      supabase.auth.onAuthStateChange(
+        (event, session) => {
 
-      setUser(user);
+          const user =
+            session?.user || null;
 
-      setLoading(false);
-    })
+          setUser(user);
 
-    const subscription = authListener.data.subscription
+          setLoading(false);
+        }
+      );
+
+    const subscription =
+      authListener.data.subscription;
 
     return () => {
-      subscription.unsubscribe()
-    }
+      subscription.unsubscribe();
+    };
 
   }, []);
 
+  // LOADING
   if (loading) {
     return <AuthLoading />;
   }
 
+  // NOT LOGGED IN
   if (!user) {
     return <LoginButton />;
   }
 
-  return <ChatLayout />;
+  // LOGGED IN
+  window.location.href = "/chat";
+
+  return null;
 }

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Body, Request
 from langchain_core.messages import HumanMessage
 from langgraph.types import Command
 
@@ -157,7 +157,7 @@ async def get_chat(thread_id: str, request: Request, user = Depends(verify_token
           .select('*')
           .eq('id', thread_id)
           .eq('user_id', user_id)
-          .single()
+          .maybe_single()
           .execute()
     )
 
@@ -213,4 +213,41 @@ async def get_chat(thread_id: str, request: Request, user = Depends(verify_token
             }
             for message in filtered_messages
         ]
+    }
+
+
+@router.patch("/chats/{thread_id}/title")
+async def update_chat_title(thread_id: str, data: dict = Body(...), user= Depends(verify_token)):
+    
+    response = (
+        supabase
+        .table("chats")
+        .update({
+            "title": data["title"]
+        })
+        .eq("id", thread_id)
+        .eq("user_id", user["sub"])
+        .execute()
+    )
+
+    return response.data
+
+
+@router.delete("/chats/{thread_id}")
+async def delete_chat(
+    thread_id: str,
+    user = Depends(verify_token)
+):
+
+    response = (
+        supabase
+        .table("chats")
+        .delete()
+        .eq("id", thread_id)
+        .eq("user_id", user["sub"])
+        .execute()
+    )
+
+    return {
+        "success": True
     }

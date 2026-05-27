@@ -1,57 +1,29 @@
 "use client";
 
 import Sidebar from "./Sidebar";
-import ChatHeader from "./ChatHeader";
-import ChatMessages from "./ChatMessages";
-import ChatInput from "./ChatInput";
 
-import { useChat } from "@/hooks/useChat";
-
-export default function ChatLayout() {
-  const {
-    input,
-    setInput,
-
-    loading,
-
-    messages,
-    sendMessage,
-
-    chats,
-    currentChat,
-
-    loadChat,
-
-    createNewChat,
-
-    handleApproval,
-    pendingInterrupt
-  } = useChat();
+export default function ChatLayout({
+  children,
+  chats,
+  currentChat,
+  createNewChat,
+  handleDeleteChat,
+}) {
 
   return (
     <main className="h-screen bg-black text-white flex">
+
       <Sidebar
         chats={chats}
         currentChat={currentChat}
-        loadChat={loadChat}
         createNewChat={createNewChat}
+        handleDeleteChat={handleDeleteChat}
       />
 
       <section className="flex-1 flex flex-col">
-        <ChatHeader currentChat={currentChat} />
-
-        <ChatMessages messages={messages} loading={loading} />
-
-        <ChatInput
-          input={input}
-          setInput={setInput}
-          sendMessage={sendMessage}
-          loading={loading}
-          interrupt={pendingInterrupt}
-          approval={handleApproval}
-        />
-
+        {children}
       </section>
+
     </main>
   );
 }

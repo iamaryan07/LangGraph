@@ -2,6 +2,7 @@ from langchain_community.tools import DuckDuckGoSearchResults
 from langchain_core.tools import tool
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from rag.retriever import retriever
+from langchain_core.tools import StructuredTool
 import os
 
 

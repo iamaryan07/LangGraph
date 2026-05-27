@@ -65,10 +65,14 @@ def create_chat_node(llm_with_tools):
         messages = []
 
         if state.get('summary'):
-            messages.append({
-                'role': 'system',
-                "content": f"Conversation summary:\n{state['summary']}"
-            })
+            messages.append(
+                SystemMessage(
+                    content=(
+                        f"Conversation summary:\n"
+                        f"{state['summary']}"
+                    )
+                )
+            )
 
         messages.extend(state['messages'])
 
