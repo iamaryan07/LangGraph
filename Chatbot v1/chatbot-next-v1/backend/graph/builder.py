@@ -2,8 +2,9 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.prebuilt import ToolNode
 
 from graph.state import ChatState
-from graph.nodes import create_chat_node, approval_node, denial_node, create_summarize_node, should_summarize
+from graph.nodes import create_chat_node, approval_node, denial_node, create_summarize_node, should_summarize, create_remember_node
 from graph.tools import load_all_tools
+from graph.state import MemoryDecision
 
 from langchain.messages import AIMessage
 
@@ -11,8 +12,10 @@ from services.llm import get_llm
 
 from psycopg import AsyncConnection
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from langgraph.store.postgres.aio import AsyncPostgresStore
 
 from dotenv import load_dotenv
+
 
 import os
 
@@ -45,16 +48,27 @@ async def build_graph():
 
     llm = get_llm()
 
-    llm_with_tools = llm.bind_tools(tools)
+    llm_with_tools = llm.bind_tools(tools, parallel_tool_calls=False,)
+    
+    memory_llm = llm.with_structured_output(MemoryDecision)
 
-    conn = await AsyncConnection.connect(
+    checkpointer_conn = await AsyncConnection.connect(
         DB_URI,
         autocommit=True,
         prepare_threshold=0
     )
 
-    checkpointer = AsyncPostgresSaver(conn)
+    store_conn = await AsyncConnection.connect(
+        DB_URI,
+        autocommit=True,
+        prepare_threshold=0
+    )
+
+    checkpointer = AsyncPostgresSaver(checkpointer_conn)
     await checkpointer.setup()
+
+    store = AsyncPostgresStore(store_conn)
+    await store.setup()
 
     graph = StateGraph(ChatState)
 
@@ -65,8 +79,10 @@ async def build_graph():
     graph.add_node("tools", tool_node)
     graph.add_node("denial_node", denial_node)
     graph.add_node("summarize", create_summarize_node(llm))
+    graph.add_node("remember_node", create_remember_node(memory_llm))
 
-    graph.add_edge(START, "chat_node")
+    graph.add_edge(START, "remember_node")
+    graph.add_edge("remember_node", "chat_node")
     graph.add_conditional_edges("chat_node",
                                 chat_router,
                                 {
@@ -86,6 +102,6 @@ async def build_graph():
     graph.add_edge("denial_node", END)
     graph.add_edge("tools", "chat_node")
 
-    chatbot = graph.compile(checkpointer= checkpointer)
+    chatbot = graph.compile(checkpointer= checkpointer, store= store)
 
     return chatbot

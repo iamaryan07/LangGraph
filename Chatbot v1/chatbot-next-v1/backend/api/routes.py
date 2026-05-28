@@ -55,7 +55,8 @@ async def chat(req: ChatRequest, request: Request, user = Depends(verify_token))
 
     config = {
         'configurable': {
-            'thread_id': req.thread_id
+            'thread_id': req.thread_id,
+            'user_id': user_id
         },
         "metadata": {
             "thread_id": req.thread_id
@@ -143,7 +144,8 @@ async def get_chat(thread_id: str, request: Request, user = Depends(verify_token
 
     config = {
         "configurable": {
-            "thread_id": thread_id
+            "thread_id": thread_id,
+            'user_id': user_id
         },
         "metadata": {
             "thread_id": thread_id
