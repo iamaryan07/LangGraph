@@ -11,7 +11,7 @@ export default function ChatLayout({
 }) {
 
   return (
-    <main className="h-screen bg-black text-white flex">
+    <main className="h-screen bg-black text-white flex overflow-hidden">
 
       <Sidebar
         chats={chats}

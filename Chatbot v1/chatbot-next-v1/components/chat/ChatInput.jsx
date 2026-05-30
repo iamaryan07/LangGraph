@@ -15,7 +15,7 @@ export default function ChatInput({
 
     if (interrupt) return;
 
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
@@ -75,16 +75,23 @@ export default function ChatInput({
       )}
 
       {/* NORMAL INPUT */}
-      <div className="max-w-4xl mx-auto flex items-center gap-3 bg-zinc-900 border border-zinc-800 rounded-3xl px-5 py-3 shadow-2xl">
+      <div className="max-w-5xl mx-auto flex items-center gap-3 bg-zinc-900 border border-zinc-800 rounded-3xl px-6 py-4 shadow-2xl">
 
-        <input
-          type="text"
+        <textarea
+          rows={1}
           placeholder={
             interrupt
               ? "Resolve pending tool approval..."
               : "Ask anything..."
           }
-          className="flex-1 bg-transparent outline-none text-white disabled:opacity-50"
+          className="
+  flex-1
+  bg-transparent
+  outline-none
+  text-white
+  placeholder:text-zinc-500
+  resize-none
+"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -94,7 +101,15 @@ export default function ChatInput({
         <button
           onClick={sendMessage}
           disabled={loading || interrupt}
-          className="bg-white text-black p-3 rounded-2xl disabled:opacity-50"
+          className="
+            bg-white
+            text-black
+            p-3
+            rounded-2xl
+            transition
+            hover:bg-zinc-200
+            disabled:opacity-50
+          "
         >
           <SendHorizonal size={18} />
         </button>

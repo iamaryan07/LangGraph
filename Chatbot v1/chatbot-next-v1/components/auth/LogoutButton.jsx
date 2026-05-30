@@ -6,9 +6,7 @@ import { supabase } from "@/lib/supabase";
 export default function LogoutButton() {
 
   async function handleLogout() {
-
     await supabase.auth.signOut();
-
     window.location.href = "/";
   }
 
@@ -16,23 +14,27 @@ export default function LogoutButton() {
     <button
       onClick={handleLogout}
       className="
-        flex items-center gap-2
+        w-full
+        flex
+        items-center
+        justify-center
+        gap-2
         rounded-xl
-        border border-zinc-800
+        border
+        border-zinc-800
         bg-zinc-950
-        px-3 py-2
-        text-sm text-zinc-400
-        transition-all
-        hover:border-zinc-700
+        px-4
+        py-3
+        text-sm
+        text-zinc-400
+        transition
         hover:bg-zinc-800
         hover:text-white
+        hover:border-zinc-700
       "
     >
       <LogOut size={16} />
-
-      <span className="hidden lg:inline">
-        Logout
-      </span>
+      Logout
     </button>
   );
 }

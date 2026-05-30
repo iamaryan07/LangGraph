@@ -33,7 +33,7 @@ export default function LoginButton() {
 
             <div>
               <h2 className="text-xl font-semibold">
-                Chatbot
+                Recall
               </h2>
 
               <p className="text-zinc-500">
