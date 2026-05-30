@@ -1,19 +1,31 @@
 export default function AuthLoading() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-black">
-      <div className="flex flex-col items-center gap-4">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-zinc-700 border-t-white" />
+    <main className="min-h-screen bg-black text-white flex items-center justify-center">
 
-        <div className="space-y-1 text-center">
-          <p className="text-sm font-medium text-white">
-            Authenticating
-          </p>
+      <div className="flex flex-col items-center">
 
-          <p className="text-xs text-zinc-400">
-            Checking your session...
-          </p>
-        </div>
+        <div
+          className="
+            h-12
+            w-12
+            animate-spin
+            rounded-full
+            border-4
+            border-zinc-800
+            border-t-white
+          "
+        />
+
+        <h2 className="mt-6 text-lg font-medium">
+          Loading
+        </h2>
+
+        <p className="mt-2 text-sm text-zinc-500">
+          Preparing your workspace...
+        </p>
+
       </div>
-    </div>
+
+    </main>
   );
 }
